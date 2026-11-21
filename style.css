@@ -20,3 +20,5 @@ dialog{width:min(440px,calc(100vw - 28px));border:1px solid #535b53;border-top:3
 
 .qslots{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}.qslots button{font:10px var(--mono);color:#c9d0c6;padding:4px;background:#343b36;border:1px solid #535c51}.qslots button:hover{color:#fac2a4}
 @media (max-width:780px) and (orientation:portrait) and (min-height:526px){body{overflow-y:hidden}.cmd{min-width:40px}.maptools button{width:37px;height:36px}#mobileRadar{width:40px;height:40px}.tabs button{height:38px}}
+#offlineStatus:not(:empty){border-left:1px solid var(--edge);padding-left:7px;color:#aebda4;font-size:10px}
+@media(display-mode:standalone){body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}}

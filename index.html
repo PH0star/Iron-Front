@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141718"><title>IRON FRONT 鐵幕前線｜烈谷突襲</title><link rel="icon" href="assets/insignia.svg"><link rel="stylesheet" href="style.css"></head>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141718"><title>IRON FRONT 鐵幕前線｜烈谷突襲</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="assets/insignia.svg"><link rel="stylesheet" href="style.css"></head>
 <body>
 <header class="topbar">
   <div class="brand"><img src="assets/insignia.svg" alt=""><div><strong>IRON FRONT</strong><span>鐵 幕 前 線</span></div></div>
-  <div class="topright"><div class="online"><i></i> 指揮鏈路連線中</div><span class="divider"></span><button class="iconbutton" id="audioBtn" title="音效與配樂" aria-label="音效與配樂"><i data-icon="volume"></i></button><button class="iconbutton" id="helpBtn" title="戰術手冊" aria-label="戰術手冊"><i data-icon="book"></i></button><button class="pause" id="pauseBtn" aria-label="暫停戰役"><i data-icon="pause"></i><span>暫停</span></button></div>
+  <div class="topright"><div class="online"><i></i> 指揮鏈路連線中</div><span class="divider"></span><button class="iconbutton" id="installApp" hidden title="安裝鐵幕前線" aria-label="安裝鐵幕前線"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg></button><button class="iconbutton" id="audioBtn" title="音效與配樂" aria-label="音效與配樂"><i data-icon="volume"></i></button><button class="iconbutton" id="helpBtn" title="戰術手冊" aria-label="戰術手冊"><i data-icon="book"></i></button><button class="pause" id="pauseBtn" aria-label="暫停戰役"><i data-icon="pause"></i><span>暫停</span></button></div>
 </header>
 <main>
 <section class="missionbar"><div class="missionname"><span class="eyebrow"><b></b> OPERATION: CRIMSON RIFT</span><h1>烈谷突襲</h1></div>
@@ -42,7 +42,7 @@
 </div>
 <div class="mobileactions"><button id="mobileArmy"><i data-icon="squad"></i> 選取作戰部隊</button><button id="mobileBuild"><i data-icon="factory"></i> 生產指揮</button></div>
 </main>
-<footer><div><span class="tinyLed"></span><span id="statusText">戰術系統就緒</span></div><div class="tips"><span><kbd>LMB</kbd> 選取 / 框選</span><span><kbd>RMB</kbd> 下達指令</span><span><kbd>↑↓←→</kbd> 移動視野</span></div><button id="keysBtn"><i data-icon="keyboard"></i> 操作指南</button></footer>
+<footer><div><span class="tinyLed"></span><span id="statusText">戰術系統就緒</span><small id="offlineStatus"></small></div><div class="tips"><span><kbd>LMB</kbd> 選取 / 框選</span><span><kbd>RMB</kbd> 下達指令</span><span><kbd>↑↓←→</kbd> 移動視野</span></div><button id="keysBtn"><i data-icon="keyboard"></i> 操作指南</button></footer>
 <dialog id="dialog"><header><div><div class="eyebrow" id="dialogEyebrow"></div><h2 id="dialogTitle"></h2></div><button class="iconbutton" id="closeDialog" aria-label="關閉視窗"><i data-icon="x"></i></button></header><section id="dialogBody"></section></dialog>
-<script src="icons.js"></script><script src="terrain.js"></script><script src="sprites.js"></script><script src="engine.js"></script><script src="sound.js"></script><script src="game.js"></script>
+<script src="pwa.js"></script><script src="icons.js"></script><script src="terrain.js"></script><script src="sprites.js"></script><script src="engine.js"></script><script src="sound.js"></script><script src="game.js"></script>
 </body></html>
