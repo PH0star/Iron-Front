@@ -1,0 +1,20 @@
+.duel-entry,#duelPanel button,#duelVote button{font:inherit;color:#ede9d9;border:1px solid #5a6358;background:#303730;border-radius:5px;cursor:pointer}
+.duel-entry{font-weight:700;padding:7px 11px;white-space:nowrap}
+#duelPanel{width:min(455px,calc(100vw - 22px));max-height:90dvh;padding:22px;color:#e8e7dc;border:1px solid #67705a;background:#202624;border-radius:9px;box-shadow:0 20px 80px #0008;overflow:auto;overscroll-behavior:contain}
+#duelPanel::backdrop{background:#0b1111cf}
+.room-heading{display:flex;align-items:center;gap:13px;border-bottom:1px solid #50574c;padding-bottom:14px;margin-bottom:16px}
+.room-heading img{width:44px;height:44px}.room-heading small{letter-spacing:2px;color:#d5b878;font:11px monospace}.room-heading h2{font-size:25px;margin:3px 0}
+#duelPanel p,#duelVote p{font-size:14px;line-height:1.6;margin:10px 0;color:#dedccb}
+#duelPanel button,#duelVote button{padding:9px 14px;min-height:39px;font-weight:650}
+#duelPanel button:hover,#duelPanel button:focus-visible,#duelVote button:hover{border-color:#ccb977}
+#duelPanel button.primary,#duelVote #voteYes{background:#d7ba78;color:#25281f;border-color:#d7ba78}
+#duelPanel button:disabled{opacity:.5;cursor:default}
+.room-actions,.join-row,.room-seats,.room-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.join-row input{flex:1;min-width:110px;padding:10px;background:#171d1a;border:1px solid #64705e;color:white;border-radius:4px;font:18px monospace;text-transform:uppercase;letter-spacing:2px}
+.room-share{display:flex;align-items:center;gap:18px;margin:12px 0}.room-share svg{width:105px;height:105px;background:#fff;display:block;flex:none}.room-code{display:block;font:700 22px monospace;letter-spacing:3px;color:#eed294;margin-bottom:8px}
+.room-seats span{flex:1;background:#151c19;border-radius:4px;padding:8px;font-size:13px}.room-options button{flex:1}.room-options button[aria-pressed=true]{outline:2px solid #dcc083}.room-options canvas{width:100%;height:48px;display:block;object-fit:cover;margin:0 0 6px}
+#roomError:empty{display:none}#duelPanel #roomError{color:#ffba92}.room-count{font:700 26px monospace;color:#efcc8c}
+#duelVote{position:absolute;z-index:8;top:48px;right:12px;max-width:min(280px,80%);padding:8px 12px;background:#242c23f7;border:1px solid #ac9c66;border-radius:6px;color:#eee}
+#duelVote summary{cursor:pointer;font-weight:700}#duelVote button{margin:2px}
+body.blue-side .radarlegend span:first-child b{background:#8cc9e7}body.blue-side .radarlegend span:nth-child(2) b{background:#ff795d}
+@media(max-width:600px){.duel-entry{font-size:12px;padding:5px}.topright{gap:4px}#duelPanel{padding:16px}.room-heading{margin-bottom:10px}.room-options button{padding:6px!important}}

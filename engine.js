@@ -17,26 +17,31 @@
   const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
   const grid=16;
   class Skirmish{
-    constructor(terrain,emit=()=>{}){
-      this.terrain=terrain;this.emit=emit;this.time=0;this.credits=2400;this.units=[];this.sequence=0;this.queue=[];this.wave=0;this.nextWave=105;this.end='';this.kills=0;
+    constructor(terrain,emit=()=>{},duel=false){
+      this.terrain=terrain;this.emit=emit;this.time=0;this.duel=duel;this.sides=[0,1].map(()=>({credits:2400,queue:[]}));this.productionId=0;this.units=[];this.sequence=0;this.wave=0;this.nextWave=105;this.end='';this.kills=0;
       this.cols=Math.ceil(terrain.width/grid);this.rows=Math.ceil(terrain.height/grid);this.map=new Uint8Array(this.cols*this.rows);
       for(let i=0;i<this.map.length;i++){let p=this.point(i);this.map[i]=terrain.blocked(p.x,p.y)?1:0;}
       const bases=[['hq',320,440],['factory',474,335],['power',200,355],['refinery',245,555],['barracks',470,550],['turret',550,440]];
       bases.forEach(([type,x,y])=>this.add(type,0,x,y));
       [['hq',1500,600],['factory',1440,450],['turret',1250,520],['barracks',1560,480],['power',1590,580],['refinery',1540,690]].forEach(([type,x,y])=>this.add(type,1,x,y));
-      [['tank',420,454],['tank',491,464],['scout',557,505],['infantry',382,490],['infantry',402,504],['miner',187,575]].forEach(([type,x,y])=>this.add(type,0,x,y));
-      [['tank',1345,551],['scout',1325,626],['infantry',1400,574],['infantry',1373,589]].forEach(([type,x,y])=>this.add(type,1,x,y));
+      [['tank',420,454],['tank',491,464],['scout',duel?336:557,duel?204:505],['infantry',382,490],['infantry',402,504],['miner',187,575]].forEach(([type,x,y])=>this.add(type,0,x,y));
+      const east = duel
+        ? [['tank',1398,614],['tank',1352,648],['scout',1324,676],['infantry',1438,649],['infantry',1457,652],['miner',1515,755]]
+        : [['tank',1345,551],['scout',1325,626],['infantry',1400,574],['infantry',1373,589]];
+      east.forEach(([type,x,y])=>this.add(type,1,x,y));
       this.refreshGrid();
     }
+    get credits(){return this.sides[0].credits;}
+    get queue(){return this.sides[0].queue;}
     add(type,team,x,y){
       const spec=types[type], id=++this.sequence;
       const u={id,type,team,x,y,hp:spec.hp,max:spec.hp,angle:team?2.65:-.58,moving:false,path:[],order:type==='miner'?'mine':'guard',cool:0,target:0,focus:0,reroute:0,haul:0,work:0,build:0,tag:id};
       this.units.push(u);return u;
     }
     ready(type,team=0){return this.units.filter(u=>u.type===type&&u.team===team&&u.hp>0&&!u.build);}
-    population(){return this.units.filter(u=>!u.team&&!types[u.type].structure&&u.hp>0).length;}
-    capacity(){return 16+this.ready('barracks').length*8;}
-    power(){let used=0,total=0;this.units.forEach(u=>{if(!u.team&&u.hp>0&&!u.build){used+=types[u.type].power||0;total+=types[u.type].supply||0;}});return {used,total};}
+    population(team=0){return this.units.filter(u=>u.team===team&&!types[u.type].structure&&u.hp>0).length;}
+    capacity(team=0){return 16+this.ready('barracks',team).length*8;}
+    power(team=0){let used=0,total=0;this.units.forEach(u=>{if(u.team===team&&u.hp>0&&!u.build){used+=types[u.type].power||0;total+=types[u.type].supply||0;}});return {used,total};}
     point(i){return {x:(i%this.cols+.5)*grid,y:(Math.floor(i/this.cols)+.5)*grid};}
     cell(p){return clamp(Math.floor(p.y/grid),0,this.rows-1)*this.cols+clamp(Math.floor(p.x/grid),0,this.cols-1);}
     refreshGrid(){
@@ -84,31 +89,33 @@
       cells.reverse();let points=[],dir=0,old=start;
       for(const n of cells){let step=n-old;if(dir&&step!==dir)points.push(this.point(old));dir=step;old=n;}points.push(this.point(end));if(distance(goal,points[points.length-1])>2)points.push(goal);return points;
     }
-    produce(type){
+    produce(type,team=0){
+      const side=this.sides[team];
       const t=types[type];if(this.end||!t||t.structure)return '無法生產';
-      if(!this.ready(t.source).length)return '需要'+types[t.source].name;
-      if(this.population()+this.queue.length>=this.capacity())return '部隊名額已滿，請增建步兵營';
-      if(this.queue.length>=6)return '生產佇列已滿';if(this.credits<t.cost)return '資金不足';
-      this.credits-=t.cost;this.queue.push({type,remain:t.seconds});this.emit('queued',{type});return '';
+      if(!this.ready(t.source,team).length)return '需要'+types[t.source].name;
+      if(this.population(team)+side.queue.length>=this.capacity(team))return '部隊名額已滿，請增建步兵營';
+      if(side.queue.length>=6)return '生產佇列已滿';if(this.sides[team].credits<t.cost)return '資金不足';
+      this.sides[team].credits-=t.cost;side.queue.push({id:++this.productionId,type,remain:t.seconds});this.emit('queued',{type});return '';
     }
-    cancelProduction(index){
-      if(this.end||!Number.isInteger(index)||index<0||index>=this.queue.length)return 0;
-      const [item]=this.queue.splice(index,1), t=types[item.type];
+    cancelProduction(index,team=0){
+      const side=this.sides[team];
+      if(this.end||!Number.isInteger(index)||index<0||index>=side.queue.length)return 0;
+      const [item]=side.queue.splice(index,1), t=types[item.type];
       const refund=Math.ceil(t.cost*clamp(item.remain/t.seconds,0,1));
-      this.credits+=refund;return refund;
+      this.sides[team].credits+=refund;return refund;
     }
-    canPlace(type,x,y){
+    canPlace(type,x,y,team=0){
       const t=types[type],p={x,y};if(!t?.structure||!t.cost)return '無法建造';
-      if(this.credits<t.cost)return '資金不足';
-      if(!this.units.some(u=>!u.team&&!u.build&&types[u.type].structure&&distance(p,u)<215))return '請選擇我方建築附近的空地';
+      if(this.sides[team].credits<t.cost)return '資金不足';
+      if(!this.units.some(u=>u.team===team&&!u.build&&types[u.type].structure&&distance(p,u)<215))return '請選擇我方建築附近的空地';
       const footprint=t.r;
       for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,.7],[0,-.7],[.7,.55],[-.7,.55],[.7,-.55],[-.7,-.55]])if(this.terrain.blocked(x+dx*footprint,y+dy*footprint))return '地形不適合建造';
       if(this.terrain.ore.some(o=>distance(o,p)<footprint+12))return '礦區需要保留給採礦車';
       if(this.units.some(u=>u.hp>0&&Math.hypot(u.x-x,(u.y-y)*1.27)<t.r+types[u.type].r+8))return '這塊空地太小';return '';
     }
-    place(type,x,y){if(this.end)return '戰役已結束';let fail=this.canPlace(type,x,y);if(fail)return fail;const t=types[type];this.credits-=t.cost;let u=this.add(type,0,x,y);u.build=t.seconds;u.hp=Math.round(t.hp*.35);this.refreshGrid();this.emit('placed',u);return '';}
-    command(group,mode,goal,target){
-      const mobiles=group.filter(u=>!types[u.type].structure&&!u.team&&u.hp>0);let issued=0;
+    place(type,x,y,team=0){if(this.end)return '戰役已結束';let fail=this.canPlace(type,x,y,team);if(fail)return fail;const t=types[type];this.sides[team].credits-=t.cost;let u=this.add(type,team,x,y);u.build=t.seconds;u.hp=Math.round(t.hp*.35);this.refreshGrid();this.emit('placed',u);return '';}
+    command(group,mode,goal,target,team=0){
+      const mobiles=group.filter(u=>!types[u.type].structure&&u.team===team&&u.hp>0);let issued=0;
       for(let i=0;i<mobiles.length;i++){const u=mobiles[i];
         if(mode==='guard'||mode==='stop'||mode==='mine'){u.order=mode;u.path=[];u.focus=0;u.target=0;u.work=0;issued++;continue;}
         if(!goal)continue;
@@ -122,7 +129,7 @@
       const goals=u.haul?this.ready('refinery',u.team):this.terrain.ore;if(!goals.length)return;
       let g=goals.reduce((a,b)=>distance(u,a)<distance(u,b)?a:b);
       let reach=u.haul?types.refinery.r+15:29;
-      if(distance(u,g)<reach){u.path=[];u.work+=dt;if(u.work>=(u.haul?1.2:3.8)){u.work=0;if(u.haul){if(!u.team)this.credits+=260;this.emit('income',u);}u.haul=u.haul?0:1;}}
+      if(distance(u,g)<reach){u.path=[];u.work+=dt;if(u.work>=(u.haul?1.2:3.8)){u.work=0;if(u.haul){if(this.duel||!u.team)this.sides[u.team].credits+=260;this.emit('income',u);}u.haul=u.haul?0:1;}}
       else if(!u.path.length&&u.reroute<=0){u.path=this.route(u,g);u.reroute=1.5;}
     }
     walk(u,dt){
@@ -147,15 +154,29 @@
         }
       }
     }
+    runProduction(team,dt){
+      const side=this.sides[team];
+      side.credits+=dt*2;
+      const q=side.queue[0];
+      if(!q)return;
+      const source=this.ready(types[q.type].source,team)[0];
+      if(!source)return;
+      const power=this.power(team);
+      q.remain-=dt*(power.used>power.total?.45:1);
+      if(q.remain>0)return;
+      const slot=this.sequence%5;
+      const node=this.nearestCell({x:source.x+(team?-1:1)*(16+slot*12),y:source.y+47+slot%2*13});
+      if(node<0)return;
+      const p=this.point(node), unit=this.add(q.type,team,p.x,p.y);
+      side.queue.shift();
+      this.emit('ready',unit);
+    }
     tick(dt){
-      if(this.end)return;this.time+=dt;this.credits+=dt*2;
-      const power=this.power(),speed=power.used>power.total?.45:1;
-      const q=this.queue[0];
-      if(q&&this.ready(types[q.type].source).length){q.remain-=dt*speed;if(q.remain<=0){
-        const source=this.ready(types[q.type].source)[0];const slot=this.sequence%5;let node=this.nearestCell({x:source.x+16+slot*12,y:source.y+47+slot%2*13});
-        const p=this.point(node);let u=this.add(q.type,0,p.x,p.y);this.queue.shift();this.emit('ready',u);
-      }}
-      if(this.time>=this.nextWave&&this.ready('factory',1).length){
+      if(this.end)return;
+      this.time+=dt;
+      this.runProduction(0,dt);
+      if(this.duel)this.runProduction(1,dt);
+      if(!this.duel&&this.time>=this.nextWave&&this.ready('factory',1).length){
         this.wave++;this.nextWave=this.time+Math.max(55,89-this.wave*4);
         const hq=this.ready('hq')[0],f=this.ready('factory',1)[0];if(hq&&f){
           const typesOut=this.wave<3?['scout','infantry','infantry']:['tank','scout','infantry','infantry'];
@@ -163,25 +184,54 @@
           this.emit('wave',{wave:this.wave});
         }}
       let rebuild=false;
+      const pendingDamage=new Map();
       for(const u of this.units){
         if(u.hp<=0)continue;u.moving=false;u.cool-=dt;u.reroute-=dt;
         if(u.build){const amount=Math.min(u.build,dt);u.build-=amount;u.hp=Math.min(u.max,u.hp+u.max*.65*amount/types[u.type].seconds);if(u.build<=.001){u.build=0;this.emit('built',u);}continue;}
         const t=types[u.type];if(u.type==='miner'&&u.order==='mine')this.mine(u,dt);
         if(t.damage&&u.order!=='move'&&u.order!=='stop'){
-          let focus=u.focus?this.units.find(o=>o.id===u.focus&&o.hp>0):null;if(!focus)u.focus=0;
+          let focus=u.focus?this.units.find(o=>o.id===u.focus&&o.hp>0):null;if(focus&&this.canSee&&!this.canSee(u.team,focus))focus=null;
+          if(!focus)u.focus=0;
           const within=o=>distance(u,o)<=t.range+(types[o.type].structure?types[o.type].r*.71:3);
           let aim=focus&&within(focus)?focus:null;
-          if(!aim){let near=Infinity;for(const o of this.units){if(o.team===u.team||o.hp<=0||!within(o))continue;let d=distance(u,o);if(d<near){near=d;aim=o;}}}
-          if(aim){u.target=aim.id;u.angle=Math.atan2(aim.y-u.y,aim.x-u.x);if(u.cool<=0){u.cool=t.reload;aim.hp-=t.damage;this.emit('fire',{u,aim});if(aim.hp<=0){if(aim.team)this.kills++;this.emit('destroy',aim);if(types[aim.type].structure)rebuild=true;if(aim.type==='hq'){this.end=aim.team?'victory':'defeat';this.emit('end',{result:this.end});return;}}}continue;}
+          if(!aim){let near=Infinity;for(const o of this.units){if(o.team===u.team||o.hp<=0||!within(o)||(this.canSee&&!this.canSee(u.team,o)))continue;let d=distance(u,o);if(d<near){near=d;aim=o;}}}
+          if(aim){
+            u.target=aim.id;u.angle=Math.atan2(aim.y-u.y,aim.x-u.x);
+            if(u.cool<=0){
+              u.cool=t.reload;
+              this.emit('fire',{u,aim});
+              if(this.duel)pendingDamage.set(aim,(pendingDamage.get(aim)||0)+t.damage);
+              else {
+                aim.hp-=t.damage;
+                if(aim.hp<=0){
+                  if(aim.team)this.kills++;
+                  this.emit('destroy',aim);if(types[aim.type].structure)rebuild=true;
+                  if(aim.type==='hq'){this.end=aim.team?'victory':'defeat';this.emit('end',{result:this.end});return;}
+                }
+              }
+            }
+            continue;
+          }
           u.target=0;
           if(focus&&!t.structure&&u.reroute<=0&&(!u.path.length||distance(u.path[u.path.length-1],focus)>62)){u.path=this.route(u,focus);u.reroute=1.6;}
         }
         if(!t.structure&&u.path.length)this.walk(u,dt);
+      }
+      for(const [unit,damage] of pendingDamage){
+        unit.hp-=damage;
+        if(unit.hp<=0){
+          this.emit('destroy',unit);
+          if(types[unit.type].structure)rebuild=true;
+        }
+      }
+      if(this.duel){
+        const west=this.ready('hq',0).length,east=this.ready('hq',1).length;
+        if(!west||!east)this.end=west?'red':east?'blue':'draw';
       }
       this.units=this.units.filter(u=>u.hp>0);
       this.spaceUnits();
       if(rebuild)this.refreshGrid();
     }
   }
-  window.Iron={Skirmish,types,distance,clamp};
+  globalThis.Iron={Skirmish,types,distance,clamp};
 })();

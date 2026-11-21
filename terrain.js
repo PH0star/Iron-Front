@@ -236,5 +236,5 @@
     for(const b of bridges)drawBridge(c,b);
     cached=map;return cached;
   }
-  window.Terrain={width,height,bridge,bridges,ore,blocked,build};
+  globalThis.Terrain={width,height,bridge,bridges,ore,blocked,build};
 })();

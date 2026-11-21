@@ -1,0 +1,9 @@
+{
+  "name":"iron-front-duel-beta",
+  "build":{"command":"node scripts/pack-assets.mjs"},
+  "main":"server/worker.mjs",
+  "compatibility_date":"2026-05-01",
+  "durable_objects":{"bindings":[{"name":"ROOMS","class_name":"DuelRoom"}]},
+  "migrations":[{"tag":"v1","new_sqlite_classes":["DuelRoom"]}],
+  "vars":{"FRONTEND_ORIGIN":"https://ph0star.github.io"}
+}
