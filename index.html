@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141718"><title>IRON FRONT 鐵幕前線｜烈谷突襲</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="assets/insignia.svg"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="duel.css"></head>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141718"><title>IRON FRONT 鐵幕前線｜烈谷突襲</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="assets/insignia.svg"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="duel.css"><link rel="stylesheet" href="radio.css"></head>
 <body>
 <header class="topbar">
   <div class="brand"><img src="assets/insignia.svg" alt=""><div><strong>IRON FRONT</strong><span>鐵 幕 前 線</span></div></div>
@@ -15,8 +15,17 @@
 <div class="workstation">
   <section class="fieldcol">
     <div class="fieldpanel">
-      <div class="panelhead fieldhead"><span><i class="lucid" data-icon="reticle"></i> <span id="fieldLabel">戰場視圖</span></span><div class="digital"><span class="live"><b></b> LIVE</span><i data-icon="clock"></i><time id="timer">00:00</time></div></div>
+      <div class="panelhead fieldhead"><span><i class="lucid" data-icon="reticle"></i> <span id="fieldLabel">戰場視圖</span></span><div class="digital"><button id="radioKey" hidden aria-label="戰場對講機，點按打字、長按說話" aria-expanded="false" aria-controls="fieldRadio" title="點按打字，長按或按住 V 說話"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 10V3m10 7V7M8 12h8m-7 4h6"/><rect x="5" y="8" width="14" height="14" rx="3"/></svg>對講</button><span class="live"><b></b> LIVE</span><i data-icon="clock"></i><time id="timer">00:00</time></div></div>
       <div id="view"><canvas id="battle" tabindex="0" aria-label="戰場。選取我軍後點地面移動或點敵軍攻擊"></canvas>
+        <div id="radioStrip" role="status" aria-live="polite" hidden></div>
+        <section id="fieldRadio" aria-label="戰場通訊" hidden>
+          <header><strong>戰場通訊</strong><button id="radioClose" aria-label="關閉通訊">×</button></header>
+          <div id="radioLog" role="log" aria-label="本局通訊紀錄"></div>
+          <div id="radioQuick"><button>準備好了</button><button>橋頭見！</button><button>打得漂亮</button></div>
+          <form id="radioForm"><input id="radioText" maxlength="160" aria-label="傳給對手的訊息" placeholder="傳給對手…" autocomplete="off" enterkeyhint="send"><button type="submit">傳送</button></form>
+          <footer><label>收聽 <select id="radioListen"><option value="tap">點擊收聽</option><option value="auto">自動播放</option><option value="mute">靜音</option></select></label><button id="radioDictate" hidden>語音轉文字</button></footer>
+          <small id="radioHint" role="status">長按對講鍵或按住 V 錄音，最多 5 秒。</small>
+        </section>
         <button id="objective" title="檢視作戰任務"><i data-icon="flag"></i><div><b>主要目標</b><span>摧毀敵軍指揮部</span></div></button>
         <details id="duelVote" hidden open><summary>視野切換提議</summary><p></p><button id="voteYes">同意</button><button id="voteNo">維持現況</button></details><div id="notify" role="status" aria-live="polite"></div>
         <div id="modeTip" hidden><span></span><button aria-label="取消目前指令">×</button></div>
@@ -48,5 +57,5 @@
   <div class="room-heading"><i class="room-neutral" data-icon="radar"></i><img id="roomInsignia" hidden alt=""><div><small>IRON FRONT / MULTIPLAYER</small><h2 id="roomTitle">雙人對戰</h2><strong id="roomFaction" hidden></strong></div></div>
   <div id="roomBody"></div><p id="roomError" role="status"></p>
 </dialog>
-<script src="vendor/qrcode.js"></script><script src="duel-config.js"></script><script src="pwa.js"></script><script src="icons.js"></script><script src="terrain.js"></script><script src="sprites.js"></script><script src="engine.js"></script><script src="sound.js"></script><script src="game.js"></script><script src="duel.js"></script>
+<script src="vendor/qrcode.js"></script><script src="duel-config.js"></script><script src="pwa.js"></script><script src="icons.js"></script><script src="terrain.js"></script><script src="sprites.js"></script><script src="engine.js"></script><script src="sound.js"></script><script src="game.js"></script><script src="radio-mic.js"></script><script src="radio.js"></script><script src="duel.js"></script>
 </body></html>

@@ -1,14 +1,17 @@
 import assets from '../.build/public-assets.mjs';
+import {radioPath,acceptRadio} from './radio.mjs';
 import {roomPath,accept} from './transport.mjs';
 
 export class DuelRoom {
   constructor(){this.room=null;this.timer=null;}
   fetch(request){
-    const code=roomPath.exec(new URL(request.url).pathname)?.[1];
+    const path=new URL(request.url).pathname,media=radioPath.exec(path);
+    const code=(media||roomPath.exec(path))?.[1];
     if(!code||request.headers.get('Upgrade')?.toLowerCase()!=='websocket')return new Response('WebSocket required',{status:426});
     const [client,server]=Object.values(new WebSocketPair());
     server.accept();
-    accept(server,code,()=>this.room,r=>{
+    if(media)acceptRadio(server,()=>this.room);
+    else accept(server,code,()=>this.room,r=>{
       this.room=r;
       if(!this.timer)this.timer=setInterval(()=>{
         r.pulse();
@@ -20,7 +23,7 @@ export class DuelRoom {
 }
 export default {
   fetch(request,env){
-    const url=new URL(request.url),match=roomPath.exec(url.pathname);
+    const url=new URL(request.url),match=roomPath.exec(url.pathname)||radioPath.exec(url.pathname);
     if(!match){
       const name=url.pathname==='/'?'index.html':url.pathname.slice(1);
       if(!['GET','HEAD'].includes(request.method)||!Object.hasOwn(assets,name))return new Response('Not found',{status:404});

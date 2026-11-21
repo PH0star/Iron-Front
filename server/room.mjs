@@ -5,7 +5,7 @@ const GRACE=60_000, COUNTDOWN=3000, PROPOSAL=15_000;
 const modes=new Set(['fog','full']);
 const key=()=>crypto.randomUUID();
 function seat(host){
-  return {host,token:key(),wire:null,ready:false,again:false,seq:0,replies:new Map(),lastSeen:0,away:0};
+  return {host,media:null,radio:false,lastText:-Infinity,token:key(),wire:null,ready:false,again:false,seq:0,replies:new Map(),lastSeen:0,away:0};
 }
 export class Room {
   constructor(code, now=Date.now){
@@ -24,16 +24,21 @@ export class Room {
       if(i<0||this.phase!=='lobby')return '房間已滿或已開戰';
       this.seats[i]=seat(msg.create===true);
     }
-    const s=this.seats[i],old=s.wire;s.wire=wire;s.lastSeen=this.now();s.away=0;
+    const s=this.seats[i],old=s.wire;this.closeRadio(s);s.radio=msg.radio===1;s.wire=wire;s.lastSeen=this.now();s.away=0;
     if(old&&old!==wire)old.close('Seat replaced');
     wire.send({type:'welcome',room:this.code,token:s.token,seat:i,seq:s.seq});
     this.push(true);
     return '';
   }
+  closeRadio(s){
+    if(s?.media&&s.media.readyState<2)s.media.close(1000,'Radio closed');
+    if(s)s.media=null;
+  }
+  radioReady(){return this.seats.every(s=>s?.wire&&s.radio);}
   team(i){return this.swapped?1-i:i;}
   disconnect(wire){
     const s=this.seats.find(s=>s?.wire===wire);if(!s)return;
-    s.wire=null;s.away=this.now()+GRACE;
+    this.seats.forEach(p=>this.closeRadio(p));s.wire=null;s.away=this.now()+GRACE;
     this.proposal=null;
     if(this.phase!=='end'){
       this.phase=this.match?'paused':'lobby';
@@ -43,7 +48,7 @@ export class Room {
     this.push(true);
   }
   state(i){
-    return {room:this.code,round:this.round,phase:this.phase,team:this.team(i),host:this.seats[i]?.host===true,mode:this.mode,
+    return {radioReady:this.radioReady(),room:this.code,round:this.round,phase:this.phase,team:this.team(i),host:this.seats[i]?.host===true,mode:this.mode,
       rev:this.rev,deadline:this.deadline,serverTime:this.now(),proposal:this.proposal,result:this.result,
       elapsed:this.match?.sim.time||0,seats:this.seats.map((s,k)=>({team:this.team(k),online:!!s?.wire,
         ready:!!s?.ready,again:!!s?.again,occupied:!!s}))};
@@ -58,7 +63,7 @@ export class Room {
     this.lastPush=this.now();
   }
   finish(result){
-    this.phase='end';this.result=result;this.proposal=null;this.deadline=0;this.rev++;
+    this.seats.forEach(s=>this.closeRadio(s));this.phase='end';this.result=result;this.proposal=null;this.deadline=0;this.rev++;
     if(this.match&&!this.match.sim.end)this.match.sim.end=result;
   }
   handle(wire,msg){
@@ -79,10 +84,19 @@ export class Room {
       this.seats[i]=null;wire.close();
       if(this.phase==='lobby'){this.seats.forEach(p=>{if(p)p.ready=false;});this.rev++;}
     }
-    if(msg.type!=='command'||error)this.push(true);
+    if(msg.type!=='radioText'&&(msg.type!=='command'||error))this.push(true);
   }
   apply(i,m){
     const now=this.now(),s=this.seats[i];
+    if(m.type==='radioText'){
+      if(m.op!=='chat'||this.phase!=='playing'||!this.radioReady())return '通訊尚未連線';
+      const message=typeof m.text==='string'?m.text.trim():'';
+      if(!message||message.length>160||/[\u0000-\u001f\u007f]/.test(message))return '請輸入 1 至 160 字元的單行訊息';
+      if(now-s.lastText<600)return '傳送太快，請稍候';
+      s.lastText=now;
+      for(const player of this.seats)player.wire.send({type:'radioText',round:this.round,team:this.team(i),text:message});
+      return;
+    }
     if(m.type==='command'){
       if(this.phase!=='playing')return '戰局尚未開放指令';
       if(m.rev!==this.rev)return '戰局狀態已變更，請重新下令';

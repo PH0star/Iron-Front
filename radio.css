@@ -1,0 +1,26 @@
+#radioKey[hidden],#fieldRadio[hidden],#radioStrip[hidden],#radioDictate[hidden]{display:none}
+#radioKey,#fieldRadio button,#fieldRadio select{font:inherit;border:1px solid #526366;border-radius:4px;background:#253035;color:#e6ecea;cursor:pointer}
+#radioKey{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;min-height:26px;color:var(--side-light,#ffbcab);border-color:var(--side-mark,#fa8d73);font:700 13px var(--sans);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+#radioKey.recording{background:#88352b;color:white}
+#radioKey svg{width:16px;height:16px}
+#radioStrip,#fieldRadio{position:absolute;z-index:4;left:8px;color:#eff1e9;background:#182124f5;border:1px solid #5e7073;border-left:3px solid var(--side-mark);border-radius:4px;box-shadow:0 3px 14px #10171877}
+#radioStrip{bottom:52px;max-width:min(320px,85%);padding:6px 10px;font-size:13px;line-height:1.4;overflow-wrap:anywhere;pointer-events:none;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#fieldRadio{top:7px;width:min(324px,calc(100% - 16px));max-height:calc(100% - 14px);overflow:auto;padding:8px 10px;scrollbar-width:thin;font-size:13px}
+#fieldRadio header,#fieldRadio footer,#radioQuick,#radioForm{display:flex;align-items:center;gap:6px}
+#fieldRadio header,#fieldRadio footer{justify-content:space-between}
+#fieldRadio header{color:var(--side-light)}
+#fieldRadio footer{background:none;border:0;margin:6px 0 0;padding:0;min-height:0;height:auto;color:#cad3d1;font-size:12px}
+#fieldRadio button,#fieldRadio select{padding:4px 7px;min-height:28px}
+#radioClose{font-size:16px!important}
+#radioLog{max-height:95px;overflow:auto;margin:4px 0;scrollbar-width:thin}
+#radioLog p{overflow-wrap:anywhere;margin:4px 0;color:#fff;font-size:13px}
+#radioLog b{font-size:11px;margin-right:5px}
+#radioLog .red{color:#ffb8a4}#radioLog .blue{color:#b5e5ff}
+#radioForm{margin-top:6px}
+#radioForm input{font:16px var(--sans);min-width:0;flex:1;background:#10181a;border:1px solid #647379;color:#f1f3ed;padding:5px}
+#radioForm button{background:var(--side-base);color:var(--side-light)}
+#radioHint{display:block;margin-top:5px;color:#bfcdca;line-height:1.4}
+@media(max-width:780px){#radioKey{min-height:29px}#radioKey+.live{display:none}#fieldRadio{width:min(305px,calc(100% - 16px))}}
+@media(max-height:530px) and (orientation:landscape){.fieldhead:has(#radioKey:not([hidden])){min-height:30px}#radioLog{max-height:52px}}
+
+#radioStrip button{pointer-events:auto;color:var(--side-light);background:#263438;border:1px solid #67797c;border-radius:3px;cursor:pointer}

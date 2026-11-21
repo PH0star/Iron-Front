@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {extname} from 'node:path';
 import {networkInterfaces} from 'node:os';
 import {WebSocketServer} from 'ws';
+import {radioPath,acceptRadio,maxVoiceBytes} from './radio.mjs';
 import {roomPath,accept} from './transport.mjs';
 
 const root=new URL('../',import.meta.url);
@@ -18,11 +19,13 @@ const server=http.createServer(async(req,res)=>{
   }catch{res.writeHead(404).end();}
 });
 const sockets=new WebSocketServer({noServer:true,maxPayload:8192,perMessageDeflate:false});
+const mediaSockets=new WebSocketServer({noServer:true,maxPayload:maxVoiceBytes,perMessageDeflate:false});
 server.on('upgrade',(req,stream,head)=>{
-  const match=roomPath.exec(req.url);
+  const media=radioPath.exec(req.url),match=media||roomPath.exec(req.url);
   let originOk=false;
   try{originOk=!req.headers.origin||new URL(req.headers.origin).host===req.headers.host;}catch{}
   if(!match||!originOk){stream.destroy();return;}
+  if(media){mediaSockets.handleUpgrade(req,stream,head,socket=>acceptRadio(socket,()=>rooms.get(match[1])));return;}
   sockets.handleUpgrade(req,stream,head,socket=>accept(socket,match[1],()=>rooms.get(match[1]),r=>rooms.set(match[1],r)));
 });
 setInterval(()=>{for(const [code,r] of rooms){r.pulse();if(r.closed)rooms.delete(code);}},1000/24).unref();

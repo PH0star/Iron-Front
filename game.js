@@ -212,7 +212,7 @@
   $('zoomIn').onclick=()=>zoom(cam.factor*1.2);$('zoomOut').onclick=()=>zoom(cam.factor/1.2);$('homeBtn').onclick=home;$('modeTip').querySelector('button').onclick=cancelMode;
   $('unitsTab').onclick=()=>setTab('units');$('buildTab').onclick=()=>setTab('build');
   $('mobileBuild').onclick=()=>setTray(document.querySelector('.side').classList.contains('prodopen')?'':'prod');$('mobileClose').onclick=()=>setTray('');$('mobileArmy').onclick=allArmy;$('mobileRadar').onclick=()=>setTray(document.querySelector('.side').classList.contains('radaropen')?'':'radar');
-  window.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||dlg.open||$('duelPanel').open)return;
+  window.addEventListener('keydown',e=>{if(e.target.closest?.('input,textarea,select,[contenteditable=true],#fieldRadio')||e.isComposing||e.ctrlKey||e.metaKey||e.altKey||dlg.open||$('duelPanel').open)return;
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();
     if(e.key.startsWith('Arrow')){keys.add(e.key);return;}if(e.repeat)return;const k=e.key.toLowerCase();
     if(k==='escape'&&(mode||placing)){cancelMode();return;}if(k===' '||k==='escape'){showDialog(sim.end?'end':'pause');return;}

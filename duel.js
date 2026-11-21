@@ -60,6 +60,7 @@
     $('joinCode').onkeydown=e=>{if(e.key==='Enter')$('join').click();};
   }
   function reset(){
+    FieldRadio.session(null);
     clearTimeout(retry);retry=null;const old=socket;socket=null;old?.close();
     if(room)write('if-seat-'+room,'');
     setRoomUrl('');room='';token='';state=null;remote=null;seat=-1;pendingLeave=false;lastVote='';
@@ -88,7 +89,7 @@
       ws=new WebSocket(u);
     }catch{startPage('房間服務網址無效');return;}
     socket=ws;openedAt=Date.now();let rejected='';
-    ws.onopen=()=>ws.send(JSON.stringify({type:'hello',version:1,create,token}));
+    ws.onopen=()=>ws.send(JSON.stringify({type:'hello',version:1,radio:1,create,token}));
     ws.onmessage=e=>{
       if(socket!==ws)return;
       const m=JSON.parse(e.data);
@@ -98,14 +99,16 @@
         token=m.token;seat=m.seat;seq=m.seq;write('if-seat-'+room,token);setRoomUrl(room);showNote('');
       }
       if(m.type==='state'){applyState(m);return;}
+      if(m.type==='radioText'){FieldRadio.receive(m);return;}
       if(m.type==='ack'){
+        if(m.op==='chat'){FieldRadio.textAck(m);return;}
         if(m.error)hint(m.error);
         if(m.op==='leave'&&pendingLeave&&!m.error){reset();startPage();}
       }
     };
     ws.onclose=e=>{
       if(socket!==ws)return;
-      socket=null;screenKey='';
+      FieldRadio.session(null);socket=null;screenKey='';
       if(pendingLeave||rejected||e.reason==='Seat replaced'){
         reset();startPage(rejected||(e.reason==='Seat replaced'?'原席位已在另一個視窗開啟':''));return;
       }
@@ -169,7 +172,12 @@
   }
   function applyState(next){
     const previous=state,changed=previous?.round!==next.round||previous?.mode!==next.mode;
-    state=next;offset=next.serverTime-Date.now();presentFaction(next.team);
+    state=next;
+    if(next.phase==='playing'&&next.radioReady){
+      if(!FieldRadio.active)FieldRadio.session({round:next.round,team:next.team,token,
+        url:socket.url+'/radio',sendText:text=>send('radioText','chat',{text})&&seq});
+    }else if(FieldRadio.active)FieldRadio.session(null);
+    offset=next.serverTime-Date.now();presentFaction(next.team);
     if(next.world){
       const fresh=!remote||previous?.round!==next.round;
       if(fresh)remote=new RemoteBattle();

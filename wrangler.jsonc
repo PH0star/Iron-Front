@@ -1,5 +1,5 @@
 {
-  "name":"iron-front-duel",
+  "name":"iron-front-duel-beta",
   "workers_dev":true,
   "build":{"command":"node scripts/pack-assets.mjs"},
   "main":"server/worker.mjs",
