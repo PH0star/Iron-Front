@@ -1,5 +1,6 @@
 {
-  "name":"iron-front-duel-beta",
+  "name":"iron-front-duel",
+  "workers_dev":true,
   "build":{"command":"node scripts/pack-assets.mjs"},
   "main":"server/worker.mjs",
   "compatibility_date":"2026-05-01",

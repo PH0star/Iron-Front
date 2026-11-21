@@ -1,4 +1,4 @@
-// Keep the small beta self-contained on a single HTTPS origin.
+// Bundle the public game assets served by the Worker.
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {extname} from 'node:path';
 import {files,extensions} from '../server/public-files.mjs';
