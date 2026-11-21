@@ -123,3 +123,19 @@ test('two fresh armies can finish a battle using regular production and orders',
   for(let n=0;n<24*200&&!s.end;n++)m.step();
   assert.equal(s.end,'red');
 });
+
+test('invite tools belong to the creator across reconnects, rematches and reused seats',()=>{
+  const {r,socket,send,start}=fixture();
+  assert.equal(r.state(0).host,true);
+  assert.equal(r.state(1).host,false);
+  const token=r.seats[0].token;
+  r.disconnect(r.seats[0].wire);
+  assert.equal(r.join(socket(),{version:1,token}),'');
+  assert.equal(r.state(0).host,true);
+  start();r.finish('blue');send(0,'rematch');send(1,'rematch');
+  assert.deepEqual([r.state(0).team,r.state(0).host],[1,true]);
+  assert.deepEqual([r.state(1).team,r.state(1).host],[0,false]);
+  send(0,'leave');
+  assert.equal(r.join(socket(),{version:1}),'');
+  assert.equal(r.state(0).host,false);
+});

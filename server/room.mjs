@@ -4,8 +4,8 @@ export const PROTOCOL=1;
 const GRACE=60_000, COUNTDOWN=3000, PROPOSAL=15_000;
 const modes=new Set(['fog','full']);
 const key=()=>crypto.randomUUID();
-function seat(){
-  return {token:key(),wire:null,ready:false,again:false,seq:0,replies:new Map(),lastSeen:0,away:0};
+function seat(host){
+  return {host,token:key(),wire:null,ready:false,again:false,seq:0,replies:new Map(),lastSeen:0,away:0};
 }
 export class Room {
   constructor(code, now=Date.now){
@@ -22,7 +22,7 @@ export class Room {
       if(!msg.create&&!this.seats.some(Boolean))return '找不到這個房間';
       i=this.seats.findIndex(s=>!s);
       if(i<0||this.phase!=='lobby')return '房間已滿或已開戰';
-      this.seats[i]=seat();
+      this.seats[i]=seat(msg.create===true);
     }
     const s=this.seats[i],old=s.wire;s.wire=wire;s.lastSeen=this.now();s.away=0;
     if(old&&old!==wire)old.close('Seat replaced');
@@ -43,7 +43,7 @@ export class Room {
     this.push(true);
   }
   state(i){
-    return {room:this.code,round:this.round,phase:this.phase,team:this.team(i),mode:this.mode,
+    return {room:this.code,round:this.round,phase:this.phase,team:this.team(i),host:this.seats[i]?.host===true,mode:this.mode,
       rev:this.rev,deadline:this.deadline,serverTime:this.now(),proposal:this.proposal,result:this.result,
       elapsed:this.match?.sim.time||0,seats:this.seats.map((s,k)=>({team:this.team(k),online:!!s?.wire,
         ready:!!s?.ready,again:!!s?.again,occupied:!!s}))};

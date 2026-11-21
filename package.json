@@ -1,6 +1,6 @@
 {
   "name": "iron-front-duel",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "private": true,
   "description": "鐵幕前線雙人好友房",
   "scripts": { "start": "node server/local.mjs", "test": "node --test test/*.test.mjs" },

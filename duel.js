@@ -3,6 +3,25 @@
   const $=id=>document.getElementById(id);
   const panel=$('duelPanel'), body=$('roomBody'), note=$('roomError');
   const modeName={full:'全圖可見',fog:'戰爭迷霧'}, teamName=['紅軍 · 西岸','藍軍 · 東岸'];
+  const factionNames=['紅軍','藍軍'], factionKeys=['red','blue'];
+  function presentFaction(team){
+    const assigned=team===0||team===1;
+    const name=assigned?factionNames[team]:'', key=assigned?factionKeys[team]:'';
+    if((document.body.dataset.faction||'')===key)return;
+    if(assigned)document.body.dataset.faction=key;
+    else delete document.body.dataset.faction;
+    const emblem=team===1?'assets/insignia-blue.svg':'assets/insignia.svg';
+    document.querySelector('.brand img').src=emblem;
+    document.querySelector('link[rel="icon"]').href=emblem;
+    $('roomInsignia').src=emblem;$('roomInsignia').hidden=!assigned;
+    $('roomFaction').hidden=!assigned;
+    $('roomFaction').textContent=assigned?'你指揮'+teamName[team]:'';
+    $('fieldLabel').textContent=assigned?'我方 · '+teamName[team]:'戰場視圖';
+    $('productionLabel').textContent=$('mobileProductionLabel').textContent=name+'生產指揮';
+    $('radarFriend').textContent='我方'+(assigned?'・'+name:'');
+    $('radarFoe').textContent='敵方'+(assigned?'・'+factionNames[1-team]:'');
+    $('objective').querySelector('span').textContent=assigned?'摧毀'+factionNames[1-team]+'指揮部':'摧毀敵軍指揮部';
+  }
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const roomPattern=/^[A-HJ-NP-Z2-9]{8}$/;
   const args=new URL(location.href).searchParams;
@@ -44,7 +63,7 @@
     clearTimeout(retry);retry=null;const old=socket;socket=null;old?.close();
     if(room)write('if-seat-'+room,'');
     setRoomUrl('');room='';token='';state=null;remote=null;seat=-1;pendingLeave=false;lastVote='';
-    document.body.classList.remove('blue-side');$('duelVote').hidden=true;$('radarMode').textContent='RADAR';
+    presentFaction(null);$('duelVote').hidden=true;$('radarMode').textContent='RADAR';
     $('duelOpen').textContent='雙人對戰';$('pauseBtn').setAttribute('aria-label','暫停戰役');
     $('pauseBtn').querySelector('span').textContent='暫停';document.querySelector('.missionname h1').textContent='烈谷突襲';
     BattleUI.exit();
@@ -103,7 +122,7 @@
     constructor(){this.network=true;this.terrain=Terrain;this.maskData=null;}
     apply(world,team){
       const oldMask=this.mask,previous=this.units;
-      Object.assign(this,world);
+      Object.assign(this,world);this.faction=team;
       this.units=world.units.map(u=>({...u,faction:u.team,team:u.team===team?0:1}));
       if(previous&&this.mask===oldMask){
         const byId=new Map(previous.map(u=>[u.id,u]));
@@ -150,13 +169,13 @@
   }
   function applyState(next){
     const previous=state,changed=previous?.round!==next.round||previous?.mode!==next.mode;
-    state=next;offset=next.serverTime-Date.now();
+    state=next;offset=next.serverTime-Date.now();presentFaction(next.team);
     if(next.world){
       const fresh=!remote||previous?.round!==next.round;
       if(fresh)remote=new RemoteBattle();
       remote.apply(next.world,next.team);
       if(fresh){
-        BattleUI.enter(remote);document.body.classList.toggle('blue-side',!!next.team);
+        BattleUI.enter(remote);
         document.querySelector('.missionname h1').textContent='烈谷對決';$('duelOpen').textContent='對戰房';
         $('pauseBtn').querySelector('span').textContent='選單';$('pauseBtn').setAttribute('aria-label','對戰選單');
       }else BattleUI.refresh(changed);
@@ -181,18 +200,26 @@
   function renderRoom(force=false){
     if(!state)return;
     const s=state,sec=Math.max(0,Math.ceil((s.deadline-Date.now()-offset)/1000));
-    const key=JSON.stringify([s.phase,s.round,s.mode,s.rev,s.seats,s.proposal?.id,sec===0]);
+    const key=JSON.stringify([s.phase,s.round,s.mode,s.rev,s.team,s.host,s.result,s.seats,s.proposal?.id,sec===0]);
     if(!force&&screenKey===key&&panel.open){updateClock();return;}
     screenKey=key;showNote('');
     const titles={lobby:'雙人好友房',countdown:'作戰倒數',paused:'等待重連',playing:'對戰選單',end:'對戰結算'};
     openPanel(titles[s.phase]);
-    const seats='<div class="room-seats">'+s.seats.map((p,i)=>'<span>'+teamName[p.team]+(i===seat?'（你）':'')+'<br>'+(!p.occupied?'等待好友':!p.online?'離線':p.ready?'✓ 已準備':'已入房')+'</span>').join('')+'</div>';
+    const seats='<div class="room-seats">'+s.seats.map((p,i)=>
+      '<div class="seat seat-'+factionKeys[p.team]+'"><b>'+(i===seat?'我方':'對手')+' · '+factionNames[p.team]+'</b><small>'+
+      (!p.occupied?'等待入房':!p.online?'離線':p.ready?'✓ 已準備':'已入房')+'</small></div>').join('')+'</div>';
     if(s.phase==='lobby'){
-      body.innerHTML='<div class="room-share"><div id="qrCode"></div><div><small>好友房號</small><b class="room-code">'+room+'</b>'+btn('copyLink','複製邀請連結')+'</div></div>'+seats+
+      const inviteOpen=s.host&&!s.seats[1-seat].occupied;
+      const code='<small>好友房號</small><b class="room-code">'+room+'</b>';
+      const roomInfo=inviteOpen?'<div class="room-share"><div id="qrCode"></div><div>'+code+
+        btn('copyLink','複製邀請連結')+'</div></div>':'<div class="room-id">'+code+'</div>';
+      body.innerHTML=roomInfo+seats+
         '<div class="room-options">'+['full','fog'].map(m=>'<button id="opt-'+m+'" aria-pressed="'+(s.mode===m)+'"><canvas width="160" height="54"></canvas>'+modeName[m]+'</button>').join('')+'</div>'+
         actions(btn('ready',s.seats[seat].ready?'取消準備':'準備作戰',true),btn('leave','離開房間'));
-      const qr=qrcode(0,'M');qr.addData(invite());qr.make();$('qrCode').innerHTML=qr.createSvgTag({cellSize:3,margin:12,scalable:true});
-      on('copyLink',async()=>{try{await navigator.clipboard.writeText(invite());showNote('已複製邀請連結');}catch{showNote(invite());}});
+      if(inviteOpen){
+        const qr=qrcode(0,'M');qr.addData(invite());qr.make();$('qrCode').innerHTML=qr.createSvgTag({cellSize:3,margin:12,scalable:true});
+        on('copyLink',async()=>{try{await navigator.clipboard.writeText(invite());showNote('已複製邀請連結');}catch{showNote(invite());}});
+      }
       for(const m of ['full','fog']){BattleUI.preview($('opt-'+m).querySelector('canvas'),m==='fog');on('opt-'+m,()=>act('mode',{mode:m}));}
     }else if(s.phase==='countdown'){
       body.innerHTML=seats+'<p>視野模式 · '+modeName[s.mode]+'</p><b class="room-count" id="roomClock"></b>'+actions(btn('ready','取消準備'));
@@ -202,13 +229,15 @@
         '<p>戰場、生產與收入已暫停。保留席位 <b id="roomClock"></b></p>'+(sec===0?actions(btn('wait','繼續等待'),btn('abort','結束本局')):''))+actions(btn('leave','離開房間'));
       on('wait',()=>act('wait'));on('abort',()=>act('abort'));
     }else if(s.phase==='playing'){
-      body.innerHTML='<p>'+teamName[s.team]+'　｜　'+modeName[s.mode]+'</p><p>開啟選單時，對戰持續進行。</p>'+
+      body.innerHTML='<p>'+modeName[s.mode]+' · 目標為摧毀'+factionNames[1-s.team]+'指揮部。</p><p>開啟選單時，對戰持續進行。</p>'+
         actions(btn('return','返回戰場',true),btn('offer',s.proposal?'等待視野提議回覆':'提議切換至'+modeName[s.mode==='full'?'fog':'full']))+actions(btn('leave','離開對戰'));
       $('offer').disabled=!!s.proposal;on('return',()=>panel.close());on('offer',()=>{act('offer');panel.close();});
     }else{
-      const result=s.result==='draw'?'雙方指揮部同時被摧毀 · 和局':s.result==='aborted'?'對戰中止':s.result===['red','blue'][s.team]?'敵方指揮部被摧毀 · 勝利':'我方指揮部被摧毀 · 敗北';
+      const winner=factionKeys.indexOf(s.result);
+      const result=winner<0?(s.result==='draw'?'和局 · 雙方指揮部同時被摧毀':'對戰中止 · 本局無勝負'):
+        factionNames[winner]+'獲勝 · '+(winner===s.team?'我方勝利':'我方敗北');
       const time=Math.floor(s.elapsed);
-      body.innerHTML='<p>'+result+'</p><p>作戰時間 '+Math.floor(time/60)+' 分 '+time%60+' 秒</p>'+
+      body.innerHTML='<p class="match-result">'+result+'</p><p>作戰時間 '+Math.floor(time/60)+' 分 '+time%60+' 秒</p>'+
         actions(btn('again',s.seats[seat].again?'等待對手再戰':'交換陣營再戰',true),btn('leave','離開房間'));
       $('again').disabled=s.seats[seat].again||!s.seats.every(p=>p.online);on('again',()=>act('rematch'));
     }

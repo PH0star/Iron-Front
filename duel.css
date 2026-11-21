@@ -12,9 +12,45 @@
 .room-actions,.join-row,.room-seats,.room-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
 .join-row input{flex:1;min-width:110px;padding:10px;background:#171d1a;border:1px solid #64705e;color:white;border-radius:4px;font:18px monospace;text-transform:uppercase;letter-spacing:2px}
 .room-share{display:flex;align-items:center;gap:18px;margin:12px 0}.room-share svg{width:105px;height:105px;background:#fff;display:block;flex:none}.room-code{display:block;font:700 22px monospace;letter-spacing:3px;color:#eed294;margin-bottom:8px}
-.room-seats span{flex:1;background:#151c19;border-radius:4px;padding:8px;font-size:13px}.room-options button{flex:1}.room-options button[aria-pressed=true]{outline:2px solid #dcc083}.room-options canvas{width:100%;height:48px;display:block;object-fit:cover;margin:0 0 6px}
+.room-options button{flex:1}.room-options button[aria-pressed=true]{outline:2px solid #dcc083}.room-options canvas{width:100%;height:48px;display:block;object-fit:cover;margin:0 0 6px}
 #roomError:empty{display:none}#duelPanel #roomError{color:#ffba92}.room-count{font:700 26px monospace;color:#efcc8c}
 #duelVote{position:absolute;z-index:8;top:48px;right:12px;max-width:min(280px,80%);padding:8px 12px;background:#242c23f7;border:1px solid #ac9c66;border-radius:6px;color:#eee}
 #duelVote summary{cursor:pointer;font-weight:700}#duelVote button{margin:2px}
-body.blue-side .radarlegend span:first-child b{background:#8cc9e7}body.blue-side .radarlegend span:nth-child(2) b{background:#ff795d}
 @media(max-width:600px){.duel-entry{font-size:12px;padding:5px}.topright{gap:4px}#duelPanel{padding:16px}.room-heading{margin-bottom:10px}.room-options button{padding:6px!important}}
+
+/* The room owns the seat. The current round owns the colours. */
+body[data-faction="red"]{
+  --side-light:#ffb8a4;--side-mark:#ff795d;--side-base:#57332d;--side-deep:#2d2221;--opponent:#8cc9e7;
+}
+body[data-faction="blue"]{
+  --side-light:#b5e5ff;--side-mark:#8cc9e7;--side-base:#284656;--side-deep:#1b2a33;--opponent:#ff795d;
+}
+body[data-faction]{--red:var(--side-mark)}
+.room-neutral{width:44px;height:44px;color:#d7ba78;flex:none}
+.room-neutral svg{width:34px;height:34px}
+[data-faction] .room-neutral{display:none}
+.room-heading img[hidden],#roomFaction[hidden]{display:none}
+[data-faction] #duelPanel{border-color:var(--side-mark);border-top-width:3px;background:linear-gradient(145deg,var(--side-deep),#1b2021 75%)}
+#roomFaction{display:block;color:var(--side-light);font-size:15px;letter-spacing:.05em;margin-top:4px}
+[data-faction] .room-heading small,[data-faction] .room-count,.room-id .room-code,[data-faction] .room-share .room-code{color:var(--side-light)}
+.room-id{display:flex;align-items:center;gap:12px}
+.room-id .room-code{font-size:17px;margin:0}
+.room-seats .seat{flex:1;min-width:100px;padding:8px 11px;border-left:3px solid;border-radius:3px;background:#161c1d}
+.room-seats .seat-red{border-color:#ff795d;color:#ffb8a4}
+.room-seats .seat-blue{border-color:#8cc9e7;color:#b5e5ff}
+.seat b,.seat small{display:block}.seat small{color:#c1c8c3;margin-top:2px}
+[data-faction] #duelPanel button.primary,[data-faction] #duelVote #voteYes{background:var(--side-light);border-color:var(--side-mark);color:#182024}
+[data-faction] .room-options button[aria-pressed=true]{outline-color:var(--side-mark);background:var(--side-base)}
+[data-faction] #duelPanel button:hover,[data-faction] #duelPanel button:focus-visible{border-color:var(--side-mark)}
+#duelPanel .match-result{font-size:21px;font-weight:750}
+[data-faction] .topbar{border-bottom-color:var(--side-mark)}
+[data-faction] .panelhead{background:linear-gradient(105deg,var(--side-base),var(--side-deep) 75%)}
+[data-faction] .fieldhead>span:first-child,[data-faction] .missionname>.eyebrow,[data-faction] dialog .eyebrow,[data-faction] .help-h{color:var(--side-light)}
+[data-faction] .tabs button.active,[data-faction] .cmd.active,[data-faction] .mobileactions #mobileBuild,[data-faction] .dialogbtn.primary,[data-faction] .switch.on{
+  background:var(--side-base);color:var(--side-light);border-color:var(--side-mark)
+}
+[data-faction] .tabs button.active{box-shadow:inset 0 -2px var(--side-mark)}
+[data-faction] .cmd.active>svg{color:var(--side-light)}
+[data-faction] .artbox,[data-faction] .unitportrait{background-color:var(--side-deep);background-image:linear-gradient(#a6b2b00c 1px,transparent 1px),linear-gradient(90deg,#a6b2b00c 1px,transparent 1px),radial-gradient(ellipse at 50% 65%,var(--side-base),var(--side-deep) 85%)}
+[data-faction] .qbar b,[data-faction] .radarlegend>span:first-child b{background:var(--side-mark)}
+[data-faction] .radarlegend>span:nth-child(2) b{background:var(--opponent);width:8px;height:7px;clip-path:polygon(50% 0,100% 100%,0 100%)}
