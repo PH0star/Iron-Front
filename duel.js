@@ -54,7 +54,7 @@
     screenKey='';openPanel('選擇作戰模式');showNote(message);
     body.innerHTML=actions(btn('solo','單人戰役'),btn('create','建立雙人好友房',true))+
       '<label for="joinCode">加入好友房</label><div class="join-row"><input id="joinCode" maxlength="8" placeholder="8 碼房號" autocomplete="off" autocapitalize="characters" spellcheck="false">'+btn('join','加入')+'</div>';
-    on('solo',()=>{panel.close();showNote('');});
+    on('solo',()=>{panel.close();showNote('');BattleUI.startSolo();});
     on('create',()=>{Comms.init();const nums=crypto.getRandomValues(new Uint8Array(8));connect(Array.from(nums,n=>alphabet[n%alphabet.length]).join(''),true);});
     on('join',()=>{Comms.init();const id=$('joinCode').value.trim().toUpperCase();if(!roomPattern.test(id)){showNote('請輸入好友提供的 8 碼房號');return;}connect(id,false);});
     $('joinCode').onkeydown=e=>{if(e.key==='Enter')$('join').click();};
@@ -65,7 +65,7 @@
     if(room)write('if-seat-'+room,'');
     setRoomUrl('');room='';token='';state=null;remote=null;seat=-1;pendingLeave=false;lastVote='';
     presentFaction(null);$('duelVote').hidden=true;$('radarMode').textContent='RADAR';
-    $('duelOpen').textContent='雙人對戰';$('pauseBtn').setAttribute('aria-label','暫停戰役');
+    $('duelOpen').textContent='單人戰役';$('duelOpen').title='切換作戰模式';$('pauseBtn').setAttribute('aria-label','暫停戰役');
     $('pauseBtn').querySelector('span').textContent='暫停';document.querySelector('.missionname h1').textContent='烈谷突襲';
     BattleUI.exit();
   }
@@ -184,7 +184,7 @@
       remote.apply(next.world,next.team);
       if(fresh){
         BattleUI.enter(remote);
-        document.querySelector('.missionname h1').textContent='烈谷對決';$('duelOpen').textContent='對戰房';
+        document.querySelector('.missionname h1').textContent='烈谷對決';$('duelOpen').textContent='對戰房';$('duelOpen').title='開啟對戰房';
         $('pauseBtn').querySelector('span').textContent='選單';$('pauseBtn').setAttribute('aria-label','對戰選單');
       }else BattleUI.refresh(changed);
       if(next.phase==='playing')for(const e of next.world.events){
@@ -254,7 +254,7 @@
   function updateClock(){const clock=$('roomClock');if(clock&&state)clock.textContent=Math.max(0,Math.ceil((state.deadline-Date.now()-offset)/1000))+' 秒';}
   setInterval(updateClock,200);
   function menu(){if(state&&socket?.readyState===WebSocket.OPEN)renderRoom(true);else if(room)connecting();else startPage();}
-  panel.addEventListener('cancel',e=>{e.preventDefault();if(!room||state?.phase==='playing')panel.close();});
+  panel.addEventListener('cancel',e=>{e.preventDefault();if(!room){panel.close();BattleUI.startSolo();}else if(state?.phase==='playing')panel.close();});
   $('duelOpen').onclick=menu;window.DuelUI={menu};
   const code=(args.get('room')||'').toUpperCase();
   if(roomPattern.test(code))connect(code,false);else startPage();

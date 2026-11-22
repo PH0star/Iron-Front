@@ -28,9 +28,9 @@
   function event(kind,data){
     if(kind==='fire'){fx.push({kind,u:data.u,ax:data.u.x,ay:data.u.y-10,bx:data.aim.x,by:data.aim.y-11,age:0,inf:data.u.type==='infantry'||data.u.type==='scout'});if(inView(data.u)||inView(data.aim))Comms.play(data.u.type==='infantry'||data.u.type==='scout'?'rifle':'fire');}
     if(kind==='destroy'){fx.push({kind,ax:data.x,ay:data.y-9,age:0,big:types[data.type].structure});if(inView(data))Comms.play('destroy');}
-    if(kind==='ready'||kind==='built')pop(types[data.type].name+(kind==='ready'?'已就緒':'建造完成'),'ready');
+    if((kind==='ready'||kind==='built')&&(sim?.network||data.team===0))pop(types[data.type].name+(kind==='ready'?'已就緒':'建造完成'),'ready');
     if(kind==='income'&&!data.team){marks.push({x:data.x,y:data.y-20,age:0,kind:'cash'});}
-    if(kind==='wave')pop('雷達警報：敵軍增援已出發','wave');
+    if(kind==='wave')pop('雷達警報：藍軍部隊正向西岸推進','wave');
     if(kind==='end'){cancelMode();Comms.play(data.result);setTimeout(()=>showDialog('end'),90);}
   }
   function newGame(){sim=new Skirmish(Terrain,event);selected=[sim.ready('tank')[0].id];activated=false;paused=false;mode='';placing='';fx=[];marks=[];remainder=0;tab='units';cam.factor=1;cam.x=compact()?376:452;cam.y=443;lastUnitKey=lastCmdKey=drawCatalogKey='';setTray('');fit();catalog();update();updateMode();$('statusText').textContent='戰術系統就緒';}
@@ -208,11 +208,11 @@
     if(kind==='pause')body='<p>戰場時間與生產佇列已暫停。</p><div class="missionstats"><span>作戰時間<b>'+short(sim.time)+'</b></span><span>擊毀敵軍<b>'+sim.kills+'</b></span></div><div class="actionrow">'+action('resumeMatch','繼續作戰',true)+action('restartMatch','重新開始')+'</div>';
     if(kind==='restart')body='<p>目前戰役進度將重設。雙方會從初始基地與資源重新部署。</p><div class="actionrow">'+action('confirmRestart','重新部署',true)+action('backPause','返回')+'</div>';
     if(kind==='end')body='<p>'+(sim.end==='victory'?'敵軍指揮部已摧毀，烈谷戰區由我方控制。':'我方指揮部已被摧毀，部隊已撤出戰區。')+'</p><div class="missionstats"><span>作戰時間<b>'+short(sim.time)+'</b></span><span>擊毀敵軍<b>'+sim.kills+'</b></span></div><div class="actionrow">'+action('confirmRestart','再次出擊',true)+'</div>';
-    if(kind==='objective')body='<p>你指揮的是河谷西側的紅色部隊。保護我方基地，摧毀東側藍軍指揮部，即可取得勝利。</p><div class="controls-list"><strong>經濟</strong><span>採礦車會自動在礦區採集，再送回精煉廠。</span><strong>擴軍</strong><span>點生產卡加入佇列。選擇建築後，在基地旁的空地部署。</span><strong>進攻</strong><span>北橋直通敵軍防線，也可由南橋繞行。點雷達可查看兩岸。</span></div><div class="actionrow">'+action('resumeMatch','返回戰場',true)+'</div>';
+    if(kind==='objective')body='<p>你指揮的是河谷西側的紅色部隊。藍軍會採礦擴軍並跨橋進攻。保護我方基地，摧毀東側藍軍指揮部，即可取得勝利。</p><div class="controls-list"><strong>經濟</strong><span>採礦車會自動在礦區採集，再送回精煉廠。</span><strong>擴軍</strong><span>點生產卡加入佇列。選擇建築後，在基地旁的空地部署。</span><strong>進攻</strong><span>北橋直通敵軍防線，也可由南橋繞行。點雷達可查看兩岸。</span></div><div class="actionrow">'+action('resumeMatch','返回戰場',true)+'</div>';
     if(kind==='help')body='<strong class="help-h">電腦操作</strong><div class="controls-list"><strong>左鍵 / 拖曳</strong><span>選取我軍 / 框選多個單位</span><strong>點擊或右鍵</strong><span>點地面移動，點敵軍鎖定攻擊</span><strong>方向鍵 / 雷達</strong><span>平移視野，滾輪縮放，H 回基地</span><strong>F / M / A</strong><span>選取全軍 / 移動 / 攻擊行進</span><strong>G / S / Esc</strong><span>原地警戒 / 停止 / 取消或暫停</span></div><strong class="help-h">手機操作</strong><div class="controls-list"><strong>點選 / 雙點</strong><span>選取單位 / 選取畫面內同型單位</span><strong>單指 / 雙指</strong><span>拖曳移動視野，雙指縮放戰場</span><strong>生產指揮</strong><span>點卡片生產，點建築後再點空地放置</span></div><div class="actionrow">'+action('resumeMatch','返回戰場',true)+'</div>';
     if(kind==='audio')body='<div class="dialogrow"><b>作戰音效</b><button id="toggleEffects" class="switch"></button></div><div class="dialogrow"><b>行軍配樂</b><button id="toggleMusic" class="switch"></button></div><div class="dialogrow"><label for="level">主音量 <small id="volValue"></small></label><input type="range" id="level" min="0" max="100" value="'+Math.round(Comms.prefs.volume*100)+'"></div><div class="actionrow">'+action('resumeMatch','返回戰場',true)+'</div>';
     $('dialogBody').innerHTML=body;if(!dlg.open)dlg.showModal();
-    const bind=(id,fn)=>{const e=$(id);if(e)e.onclick=fn;};bind('resumeMatch',closeModal);bind('restartMatch',()=>showDialog('restart'));bind('backPause',()=>showDialog('pause'));bind('confirmRestart',()=>{dlg.close();newGame();});
+    const bind=(id,fn)=>{const e=$(id);if(e)e.onclick=fn;};bind('resumeMatch',closeModal);bind('restartMatch',()=>showDialog('restart'));bind('backPause',()=>showDialog('pause'));bind('confirmRestart',()=>{dlg.close();newGame();awake();});
     if(kind==='audio'){const refresh=()=>{for(const [id,key] of [['toggleEffects','enabled'],['toggleMusic','music']]){const b=$(id);b.textContent=Comms.prefs[key]?'已開啟':'已關閉';b.classList.toggle('on',Comms.prefs[key]);b.setAttribute('aria-pressed',String(Comms.prefs[key]));}$('volValue').textContent=Math.round(Comms.prefs.volume*100)+'%';$('audioBtn').innerHTML=icon(Comms.prefs.enabled||Comms.prefs.music?'volume':'mute');};
       bind('toggleEffects',()=>{Comms.init();Comms.set('enabled',!Comms.prefs.enabled);Comms.play('select');refresh();});
       bind('toggleMusic',()=>{Comms.init();Comms.set('music',!Comms.prefs.music);refresh();});$('level').oninput=e=>{Comms.set('volume',Number(e.target.value)/100);refresh();};refresh();}
@@ -233,7 +233,7 @@
   });
   window.addEventListener('keyup',e=>keys.delete(e.key));window.addEventListener('blur',()=>keys.clear());document.addEventListener('visibilitychange',()=>{lastFrame=0;keys.clear();if(!sim.network&&document.hidden&&activated&&!dlg.open&&!sim.end)showDialog('pause');});
   function frame(ts){const dt=lastFrame?Math.min(.12,(ts-lastFrame)/1000):0;lastFrame=ts;visualTime+=dt;
-    if($('duelPanel').open&&!activated){requestAnimationFrame(frame);return;}
+    if($('duelPanel').open&&!sim.network){requestAnimationFrame(frame);return;}
     if(sim.network)sim.interpolate();
     if(!paused&&!sim.end){if(activated&&!sim.network){remainder+=dt;while(remainder>=1/24&&!sim.end){sim.tick(1/24);remainder-=1/24;}}
       if(keys.size){let step=dt*450/cam.zoom;center(cam.x+((keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0))*step,cam.y+((keys.has('ArrowDown')?1:0)-(keys.has('ArrowUp')?1:0))*step);}}
@@ -242,6 +242,7 @@
     if(!$('duelPanel').open)draw();
     uiClock+=dt;miniClock+=dt;if(uiClock>.19){uiClock=0;update();}if(miniClock>.15){miniClock=0;drawRadar();}requestAnimationFrame(frame);}
   window.BattleUI={
+    startSolo:awake,
     enter(remote){if(dlg.open)dlg.close();sim=remote;paused=false;activated=true;mode='';placing='';marks=[];fx=[];remainder=0;tab='units';
       selected=[sim.ready('tank')[0]?.id].filter(Boolean);lastUnitKey=lastCmdKey=drawCatalogKey='';setTray('');home();catalog();updateMode();update();drawRadar();},
     refresh(clear){if(clear){fx=[];marks=[];cancelMode();}update();drawRadar();},

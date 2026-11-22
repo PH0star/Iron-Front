@@ -16,9 +16,10 @@
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
   const grid=16;
+  const enemyRoster=['infantry','scout','infantry','tank','tank'];
   class Skirmish{
     constructor(terrain,emit=()=>{},duel=false){
-      this.terrain=terrain;this.emit=emit;this.time=0;this.duel=duel;this.sides=[0,1].map(()=>({credits:2400,queue:[]}));this.productionId=0;this.units=[];this.sequence=0;this.wave=0;this.nextWave=105;this.end='';this.kills=0;
+      this.terrain=terrain;this.emit=emit;this.time=0;this.duel=duel;this.sides=[0,1].map(()=>({credits:2400,queue:[]}));this.productionId=0;this.units=[];this.sequence=0;this.wave=0;this.nextWave=18;this.nextEnemyDecision=0;this.enemyRecruit=0;this.end='';this.kills=0;
       this.cols=Math.ceil(terrain.width/grid);this.rows=Math.ceil(terrain.height/grid);this.map=new Uint8Array(this.cols*this.rows);
       for(let i=0;i<this.map.length;i++){let p=this.point(i);this.map[i]=terrain.blocked(p.x,p.y)?1:0;}
       const bases=[['hq',320,440],['factory',474,335],['power',200,355],['refinery',245,555],['barracks',470,550],['turret',550,440]];
@@ -27,7 +28,7 @@
       [['tank',420,454],['tank',491,464],['scout',duel?336:557,duel?204:505],['infantry',382,490],['infantry',402,504],['miner',187,575]].forEach(([type,x,y])=>this.add(type,0,x,y));
       const east = duel
         ? [['tank',1398,614],['tank',1352,648],['scout',1324,676],['infantry',1438,649],['infantry',1457,652],['miner',1515,755]]
-        : [['tank',1345,551],['scout',1325,626],['infantry',1400,574],['infantry',1373,589]];
+        : [['tank',1345,551],['scout',1325,626],['infantry',1400,574],['infantry',1373,589],['miner',1515,755]];
       east.forEach(([type,x,y])=>this.add(type,1,x,y));
       this.refreshGrid();
     }
@@ -129,7 +130,7 @@
       const goals=u.haul?this.ready('refinery',u.team):this.terrain.ore;if(!goals.length)return;
       let g=goals.reduce((a,b)=>distance(u,a)<distance(u,b)?a:b);
       let reach=u.haul?types.refinery.r+15:29;
-      if(distance(u,g)<reach){u.path=[];u.work+=dt;if(u.work>=(u.haul?1.2:3.8)){u.work=0;if(u.haul){if(this.duel||!u.team)this.sides[u.team].credits+=260;this.emit('income',u);}u.haul=u.haul?0:1;}}
+      if(distance(u,g)<reach){u.path=[];u.work+=dt;if(u.work>=(u.haul?1.2:3.8)){u.work=0;if(u.haul){this.sides[u.team].credits+=260;this.emit('income',u);}u.haul=u.haul?0:1;}}
       else if(!u.path.length&&u.reroute<=0){u.path=this.route(u,g);u.reroute=1.5;}
     }
     walk(u,dt){
@@ -171,18 +172,40 @@
       side.queue.shift();
       this.emit('ready',unit);
     }
+    directEnemy(){
+      const team=1, queue=this.sides[team].queue;
+      // A destroyed producer must not block the remaining production line.
+      if(queue.length&&!this.ready(types[queue[0].type].source,team).length)this.cancelProduction(0,team);
+      if(!queue.length){
+        let recruit=enemyRoster[this.enemyRecruit%enemyRoster.length];
+        if(!this.ready('miner',team).length&&this.ready('refinery',team).length&&this.ready('factory',team).length){
+          recruit='miner';
+        }else if(!this.ready(types[recruit].source,team).length){
+          recruit=types[recruit].source==='factory'?'infantry':'tank';
+        }
+        if(this.produce(recruit,team)===''&&recruit!=='miner')this.enemyRecruit++;
+      }
+
+      if(this.time<this.nextWave)return;
+      const hq=this.ready('hq')[0];
+      const guards=this.units.filter(u=>u.team===team&&u.hp>0&&u.order==='guard'&&types[u.type].damage&&!types[u.type].structure);
+      // Keep one defender at home. The first patrol is small, then send larger groups.
+      const raiders=guards.slice(1,1+Math.min(2+this.wave*2,10));
+      if(hq&&raiders.length&&this.command(raiders,'attack',hq,hq,team)){
+        this.wave++;
+        this.nextWave=this.time+Math.max(24,38-this.wave*2);
+        this.emit('wave',{wave:this.wave});
+      }
+    }
     tick(dt){
       if(this.end)return;
       this.time+=dt;
       this.runProduction(0,dt);
-      if(this.duel)this.runProduction(1,dt);
-      if(!this.duel&&this.time>=this.nextWave&&this.ready('factory',1).length){
-        this.wave++;this.nextWave=this.time+Math.max(55,89-this.wave*4);
-        const hq=this.ready('hq')[0],f=this.ready('factory',1)[0];if(hq&&f){
-          const typesOut=this.wave<3?['scout','infantry','infantry']:['tank','scout','infantry','infantry'];
-          typesOut.forEach((type,i)=>{const p=this.point(this.nearestCell({x:f.x-i*20,y:f.y+60}));const u=this.add(type,1,p.x,p.y);u.order='attack';u.focus=hq.id;u.path=this.route(u,hq);});
-          this.emit('wave',{wave:this.wave});
-        }}
+      this.runProduction(1,dt);
+      if(!this.duel&&this.time>=this.nextEnemyDecision){
+        this.nextEnemyDecision=this.time+1;
+        this.directEnemy();
+      }
       let rebuild=false;
       const pendingDamage=new Map();
       for(const u of this.units){

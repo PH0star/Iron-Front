@@ -37,10 +37,40 @@ test('both players receive matched economies, production and harvest timing',()=
   for(const i of [0,1])assert.ok(Math.max(routes[0][i],routes[1][i])/Math.min(routes[0][i],routes[1][i])<=1.15);
 });
 
-test('single player retains original start, production and scripted wave',()=>{
-  const s=new Iron.Skirmish(Terrain);assert.equal(s.population(1),4);
-  assert.equal(s.produce('infantry'),'');for(let i=0;i<24*106;i++)s.tick(1/24);
-  assert.equal(s.wave,1);assert.ok(s.population()>=7);
+test('solo opponent pays for troops, mines, crosses the river and defeats an idle base',()=>{
+  const recruited=[],waves=[];let deliveries=0;
+  const sim=new Iron.Skirmish(Terrain,(kind,u)=>{
+    if(kind==='ready'&&u.team===1)recruited.push(u.type);
+    if(kind==='income'&&u.team===1)deliveries++;
+    if(kind==='wave')waves.push(sim.time);
+  });
+  assert.equal(sim.produce('infantry'),'');
+  sim.tick(1/24);
+  assert.equal(sim.sides[1].queue[0].type,'infantry');
+  assert.ok(Math.abs(sim.sides[1].credits-(2400-120+2/24))<1e-8);
+  let crossed=false;
+  for(let step=0;step<24*300&&!sim.end;step++){
+    sim.tick(1/24);
+    if(sim.units.some(u=>u.team===1&&u.order==='attack'&&u.x<780))crossed=true;
+  }
+  assert.ok(deliveries>0&&crossed&&waves.length>=2&&waves[0]<=20);
+  for(const type of ['infantry','scout','tank'])assert.ok(recruited.includes(type));
+  assert.equal(sim.end,'defeat');
+});
+
+test('solo production adapts to a destroyed factory and PvP never issues AI orders',()=>{
+  const solo=new Iron.Skirmish(Terrain);
+  for(let n=0;n<24*6;n++)solo.tick(1/24);
+  assert.equal(solo.sides[1].queue[0].type,'scout');
+  solo.ready('factory',1)[0].hp=0;
+  for(let n=0;n<24*13;n++)solo.tick(1/24);
+  assert.ok(solo.ready('infantry',1).length>3);
+  assert.equal(solo.ready('scout',1).length,1);
+  const duel=new Match('full'), size=duel.sim.population(1);
+  for(let n=0;n<24*60;n++)duel.step();
+  assert.equal(duel.sim.wave,0);
+  assert.equal(duel.sim.population(1),size);
+  assert.equal(duel.sim.sides[1].queue.length,0);
 });
 
 test('lobby version gates, capacity, ready revision and cancelled countdown',()=>{
