@@ -1,11 +1,11 @@
 # IRON FRONT｜鐵幕前線
 
-**v2.1.0-beta.3 · 戰場對講機公開測試版**
+**v2.1.0 · 戰場對講機正式版**
 在電腦或手機上指揮基地、採礦、建造與生產部隊。單人戰役從西岸紅軍出發，雙人好友房則由兩名玩家各守一岸，勝負取決於誰能摧毀對方的指揮部。
 
 ## 開始遊玩
 
-[對講機 Beta 試玩](https://iron-front-duel-beta.phostudy.workers.dev/) · [v2.0.0 正式版遊戲入口](https://ph0star.github.io/Iron-Front/) · [Cloudflare 備用入口](https://iron-front-duel.phostudy.workers.dev/)
+[正式版遊戲入口](https://ph0star.github.io/Iron-Front/) · [Cloudflare 備用入口](https://iron-front-duel.phostudy.workers.dev/)
 
 房主建立好友房後，可分享 QR Code、邀請連結或 8 碼房號。受邀玩家入房後直接選擇視野並準備作戰。房間、戰場、生產圖例與結算會依你本局指揮的陣營顯示紅軍翼徽或藍軍盾徽。兩人各選「準備作戰」後開始。房間支援不同網路的電腦、手機，以及 PWA 獨立視窗。個人選單不影響對局時間。
 
@@ -15,7 +15,7 @@
 
 ### 戰場對講機
 
-兩位玩家從 Beta 入口開房並開始對戰，即可使用戰場標題旁的「對講」。點一下可打字或傳快捷句，電腦也可按 Enter 開啟輸入框。長按按鈕或按住 V 錄最多 5 秒，放開送出，指標滑出或切到背景會取消未送出的錄音。首次錄音需要麥克風權限。手機請用公開 HTTPS 網址測語音，區網 HTTP 可測文字。
+兩位玩家加入同一間正式房並開始對戰，即可使用戰場標題旁的「對講」。點一下可打字或傳快捷句，電腦也可按 Enter 開啟輸入框。長按按鈕或按住 V 錄最多 5 秒，放開送出，指標滑出或切到背景會取消未送出的錄音。首次錄音需要麥克風權限。手機請用公開 HTTPS 網址測語音，區網 HTTP 可測文字。
 
 收聽預設為點擊播放，可選自動播放或靜音。最近 12 則訊息只保留在本局瀏覽器記憶體。房間透過既有遊戲連線傳文字，另開與席位及局數綁定的 WebSocket 即時轉送短錄音。斷線或結束對局會清除通訊紀錄並釋放麥克風。支援瀏覽器語音辨識的裝置另可選「語音轉文字」，確認結果後再送出。
 
@@ -35,7 +35,7 @@ npm start
 
 - `engine.js`、`terrain.js` 共用地形、單位、尋路、經濟與戰鬥規則。`server/match.mjs` 產生分陣營的戰場資料；`server/room.mjs` 管理席位、準備、倒數、提議、時間、重連與結算。
 - `duel.js` 負責房間、邀請、WebSocket 連線及可見範圍，`game.js` 延用原本的戰場繪圖與操作。`test/` 包含規則與真實 WebSocket 整合測試。
-- GitHub Pages 從 main 根目錄提供正式版 PWA，並連到 Cloudflare Worker `iron-front-duel` 的房間服務。Cloudflare 備用入口與 Pages 共用正式房間。此分支的 wrangler.jsonc 部署至獨立的 `iron-front-duel-beta`，請用 Beta 網址測試。每個 8 碼房號由自己的 Durable Object 管理。更新時先跑測試，連到經授權的 Cloudflare 帳戶後，在根目錄執行 `npx wrangler deploy`。`wrangler.jsonc` 的建置步驟會自動執行 `node scripts/pack-assets.mjs`，只封裝公開遊戲資源。
+- GitHub Pages 從 main 根目錄提供正式版 PWA，並連到 Cloudflare Worker `iron-front-duel` 的房間服務。Cloudflare 備用入口與 Pages 共用正式房間。測試分支使用獨立的 `iron-front-duel-beta`。每個 8 碼房號由自己的 Durable Object 管理。更新時先跑測試，連到經授權的 Cloudflare 帳戶後，在根目錄執行 `npx wrangler deploy`。`wrangler.jsonc` 的建置步驟會自動執行 `node scripts/pack-assets.mjs`，只封裝公開遊戲資源。
 - 前端若要獨立部署，可在 `duel-config.js` 指定 HTTPS 房間服務來源，並在 Worker 的 `FRONTEND_ORIGIN` 設定該前端的 origin。版本異動必須更新 `VERSION`、套件版本、`sw.js` 快取鍵；不相容的房間協定也要同步更新前後端協定號。
 - 戰局保存在執行中的房間記憶體。斷線保席位適用於裝置與網路短暫中斷；重新部署或伺服器程序重啟可能終止該局。清除網站資料或跨瀏覽器無法取用原重連憑證。
 
@@ -49,6 +49,8 @@ npm start
 | 手機 | 點選單位再點地面或敵軍。單指平移、雙指縮放。底部可開啟生產面板或選取全部作戰部隊。 |
 
 ## 版本與還原
+
+正式版 v2.1.0 收錄戰場對講、手機橫向工具列與桌面標題字距調整，以通過實測的 v2.1.0-beta.3（`e5b7a65`）為基礎。
 
 正式版 v2.0.0 以通過實測的 v2.0.0-beta.2（`5e1d3a5`）為基礎。前一個單人正式版 v1.1.0 可由提交 `87cd833` 還原。Git 標籤 `v1.0.0` 對應首個可玩版本。取得儲存庫後，執行 `git switch --detach v1.0.0` 即可查看該版；要從這個版本繼續開發，執行 `git switch -c work-from-v1 v1.0.0`。
 

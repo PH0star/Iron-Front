@@ -1,7 +1,7 @@
 // Change the release key whenever a precached resource changes.
 const root = self.registration.scope;
 const prefix = 'iron-front:' + root + ':';
-const cacheName = prefix + '2.1.0-beta.3';
+const cacheName = prefix + '2.1.0';
 const files = [
   'index.html', 'style.css', 'game.js', 'engine.js', 'terrain.js', 'sprites.js',
   'sound.js', 'icons.js', 'pwa.js', 'duel.css','radio.js','radio-mic.js','radio-capture.js','radio.css', 'duel.js', 'duel-config.js', 'vendor/qrcode.js', 'manifest.webmanifest', 'VERSION',
