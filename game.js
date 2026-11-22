@@ -11,7 +11,18 @@
   let lastTap={id:-1,t:0},statusTimer=0,noticeTimer=0,drawCatalogKey='',lastUnitKey='',lastCmdKey='';
   const short=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(Math.floor(t%60)).padStart(2,'0');
   const squad=()=>sim.units.filter(u=>u.hp>0&&selected.includes(u.id)&&!u.team);
-  const compact=()=>matchMedia('(max-width:780px),(max-height:530px) and (orientation:landscape)').matches;
+  const landscapeToolbar=matchMedia('(max-height:530px) and (orientation:landscape)');
+  const narrowScreen=matchMedia('(max-width:780px)');
+  const compact=()=>narrowScreen.matches||landscapeToolbar.matches;
+  const mobileActions=document.querySelector('.mobileactions');
+  const actionsHome=mobileActions.parentElement;
+  const systemButtons=document.querySelector('.topright');
+  function placeMobileActions(){
+    if(landscapeToolbar.matches)systemButtons.before(mobileActions);
+    else actionsHome.append(mobileActions);
+  }
+  placeMobileActions();
+  landscapeToolbar.addEventListener('change',placeMobileActions);
   function awake(){Comms.init();if(!sim.end&&!paused)activated=true;}
   function pop(msg,sound=''){if(sound)Comms.play(sound);const n=$('notify');n.textContent=msg;n.style.opacity=1;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>{n.style.opacity=0;},2100);$('statusText').textContent=msg;clearTimeout(statusTimer);statusTimer=setTimeout(()=>{$('statusText').textContent=sim?.end?'戰役已結束':'戰術系統就緒';},4000);}
   function event(kind,data){
