@@ -184,7 +184,7 @@
       remote.apply(next.world,next.team);
       if(fresh){
         BattleUI.enter(remote);
-        document.querySelector('.missionname h1').textContent='烈谷對決';$('duelOpen').textContent='對戰房';$('duelOpen').title='開啟對戰房';
+        document.querySelector('.missionname h1').textContent='烈谷對決';$('duelOpen').textContent='雙人對戰';$('duelOpen').title='開啟對戰房';
         $('pauseBtn').querySelector('span').textContent='選單';$('pauseBtn').setAttribute('aria-label','對戰選單');
       }else BattleUI.refresh(changed);
       if(next.phase==='playing')for(const e of next.world.events){
